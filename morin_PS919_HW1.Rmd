@@ -1,0 +1,44 @@
+---
+title: 'PS 919: Problem Set 1'
+author: "Blain Morin"
+date: "10/6/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+```
+
+1. *It’s only three days into the Major League Blernsball season, but fans are already excited about rookie sensation Casey Lee of the Boston Poindexters. Lee hit a grand slam blern in the first game of the Poindexters’ season, none in the second game, and three in the third game. Statistician Jack Johnson sets out to estimate the rate at which Lee hits grand slam blerns. Johnson assumes that the number of gland slam blerns that Johnson hits in a game follows a Poisson distribution with unknown rate parameter $\lambda$ and that these observations are exchangeable. Since no one had seen Lee play before the start of the season, Johnson uses a flat prior on the rate parameter. Using the results of Lee’s first three games, estimate this model in Stan with a flat prior on $\lambda$. Please run the model with 2 chains and at least 10,000 iterations per chain (e.g., with the options chains=2, iter=10000).*
+
+Here is my .stan model:
+
+```{r, echo=TRUE, eval=FALSE}
+
+data {
+  int<lower=0> N;
+  int x[N];
+}
+parameters {
+  real<lower=0> lambda;
+}
+model {
+  x ~ poisson(lambda);
+}
+
+```
+
+Here is the r code used to run the model:
+
+```{r, echo = TRUE, results = 'hide', cache = TRUE}
+
+grand.slams = c(1, 0, 3)
+
+standata = list(x = grand.slams, N = length(grand.slams))
+
+model1 = rstan::stan(file = 'model1.stan', data = standata, chains = 2, iter = 10000)
+
+```
+a. 

@@ -5,13 +5,15 @@ date: "10/6/2020"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
 
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(rstan)
+library(kableExtra)
 
 ```
 
-1. *It’s only three days into the Major League Blernsball season, but fans are already excited about rookie sensation Casey Lee of the Boston Poindexters. Lee hit a grand slam blern in the first game of the Poindexters’ season, none in the second game, and three in the third game. Statistician Jack Johnson sets out to estimate the rate at which Lee hits grand slam blerns. Johnson assumes that the number of gland slam blerns that Johnson hits in a game follows a Poisson distribution with unknown rate parameter $\lambda$ and that these observations are exchangeable. Since no one had seen Lee play before the start of the season, Johnson uses a flat prior on the rate parameter. Using the results of Lee’s first three games, estimate this model in Stan with a flat prior on $\lambda$. Please run the model with 2 chains and at least 10,000 iterations per chain (e.g., with the options chains=2, iter=10000).*
+## 1. It’s only three days into the Major League Blernsball season, but fans are already excited about rookie sensation Casey Lee of the Boston Poindexters. Lee hit a grand slam blern in the first game of the Poindexters’ season, none in the second game, and three in the third game. Statistician Jack Johnson sets out to estimate the rate at which Lee hits grand slam blerns. Johnson assumes that the number of gland slam blerns that Johnson hits in a game follows a Poisson distribution with unknown rate parameter $\lambda$ and that these observations are exchangeable. Since no one had seen Lee play before the start of the season, Johnson uses a flat prior on the rate parameter. Using the results of Lee’s first three games, estimate this model in Stan with a flat prior on $\lambda$. Please run the model with 2 chains and at least 10,000 iterations per chain (e.g., with the options chains=2, iter=10000).
 
 Here is my .stan model:
 
@@ -38,7 +40,57 @@ grand.slams = c(1, 0, 3)
 
 standata = list(x = grand.slams, N = length(grand.slams))
 
-model1 = rstan::stan(file = 'model1.stan', data = standata, chains = 2, iter = 10000)
+model1 = stan(file = 'model1.stan', data = standata, chains = 2, iter = 10000, 
+              seed = 1234) ### Set seed for replication
 
 ```
-a. 
+
+### a. Give an estimate of the rate at which Lee hits grand slam blerns using the Bayes estimator of $\lambda$ under quadratic loss.
+
+Here is a summary of the posterior distribution of $\lambda$:
+
+```{r}
+
+mod1.sum = summary(model1)$summary
+
+round(mod1.sum,3) %>%
+  kable(booktabs = T) %>%
+  kable_styling()
+
+```
+
+The Bayes estimator for $\lambda$ under quadratic loss is the mean, which we see here = 1.669.
+
+### b. Give a 95% credible interval for $\lambda$.
+
+Using the summary output above, the 95% interval for $\lambda$ is $(.524, 3.401)$.
+
+### c. *Plot the posterior distribution of $\lambda$ (as approximated by a histogram or kernel density plot of the samples).*
+
+```{r}
+
+stan_hist(model1) + ggtitle("Histogram of Lambda Estimates") +
+  theme_classic()
+
+```
+
+
+### d. The Poindexters are hoping that Lee is that rare blernsball player that averages a rate of one grand slam blerns per game or more. Give the posterior probability that this is the case (i.e., $\lambda \ge 1$).
+
+```{r, echo = TRUE}
+
+### Extract all lambda estimates
+lambdas = extract(model1)$lambda
+
+### Probability that lambda is > 1 is 
+### the count of lambda estimates > 1 divided by the number of estimates
+sum(lambdas > 1) / length(lambdas) 
+
+```
+
+**The probability that $\lambda$ is greater than or equal to 1 is .818**
+
+
+
+2. *Johnson’s bitter rival, John Jackson, criticizes Johnson’s choice of prior. While Jackson agrees with Johnson’s model, Jackson argues that the appropriate prior on $\lambda$ should be based on the distribution of the grand-slam-blerns rate exhibited by other blernsball players. This distribution is similar to a Weibull distribution with a shape parameter of 1.6 and a scale parameter of 0.3. Estimate this same model in Stan using Jackson’s
+Weibull in place of the Johnson’s uniform prior.*

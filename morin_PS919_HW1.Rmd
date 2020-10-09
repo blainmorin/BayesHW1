@@ -19,6 +19,8 @@ Here is my .stan model:
 
 ```{r, echo=TRUE, eval=FALSE}
 
+### model1.stan
+
 data {
   int<lower=0> N;
   int x[N];
@@ -65,7 +67,7 @@ The Bayes estimator for $\lambda$ under quadratic loss is the mean, which we see
 
 Using the summary output above, the 95% interval for $\lambda$ is $(.524, 3.401)$.
 
-### c. *Plot the posterior distribution of $\lambda$ (as approximated by a histogram or kernel density plot of the samples).*
+### c. Plot the posterior distribution of $\lambda$ (as approximated by a histogram or kernel density plot of the samples).
 
 ```{r}
 
@@ -88,9 +90,86 @@ sum(lambdas > 1) / length(lambdas)
 
 ```
 
-**The probability that $\lambda$ is greater than or equal to 1 is .818**
+The probability that $\lambda$ is greater than or equal to 1 is .818.
 
 
 
-2. *Johnson’s bitter rival, John Jackson, criticizes Johnson’s choice of prior. While Jackson agrees with Johnson’s model, Jackson argues that the appropriate prior on $\lambda$ should be based on the distribution of the grand-slam-blerns rate exhibited by other blernsball players. This distribution is similar to a Weibull distribution with a shape parameter of 1.6 and a scale parameter of 0.3. Estimate this same model in Stan using Jackson’s
-Weibull in place of the Johnson’s uniform prior.*
+## 2. Johnson’s bitter rival, John Jackson, criticizes Johnson’s choice of prior. While Jackson agrees with Johnson’s model, Jackson argues that the appropriate prior on $\lambda$ should be based on the distribution of the grand-slam-blerns rate exhibited by other blernsball players. This distribution is similar to a Weibull distribution with a shape parameter of 1.6 and a scale parameter of 0.3. Estimate this same model in Stan using Jackson’s Weibull in place of the Johnson’s uniform prior.
+
+Here is the .stan code for the new model:
+
+```{r, echo = TRUE, eval = FALSE}
+
+### model2.stan
+
+data {
+  int<lower=0> N;
+  int x[N];
+}
+parameters {
+  real<lower=0> lambda;
+}
+model {
+  x ~ poisson(lambda);
+  lambda ~ weibull(1.6, .3);
+}
+
+```
+
+Here is the r code used to run the new model:
+
+```{r, echo = TRUE, results = 'hide', cache = TRUE}
+
+grand.slams = c(1, 0, 3)
+
+standata = list(x = grand.slams, N = length(grand.slams))
+
+model2 = stan(file = 'model2.stan', data = standata, chains = 2, iter = 10000, 
+              seed = 1234) ### Set seed for replication
+
+```
+
+### a. Give an estimate of the rate at which Lee hits grand slam blerns using the Bayes estimator of $\lambda$ under quadratic loss.
+
+Here is a summary of the posterior distribution of $\lambda$ for the new model:
+
+```{r}
+
+mod2.sum = summary(model2)$summary
+
+round(mod2.sum,3) %>%
+  kable(booktabs = T) %>%
+  kable_styling()
+
+```
+
+
+The Bayes estimator for $\lambda$ under quadratic loss is the mean, which we see here = .515.
+
+### b. Give a 95% credible interval for $\lambda$.
+
+Using the summary output above, the 95% interval for $\lambda$ is $(.207, .926)$.
+
+### c. Plot the posterior distribution of $\lambda$ (as approximated by a histogram or kernel density plot of the samples).
+
+```{r}
+
+stan_hist(model2) + ggtitle("Histogram of Lambda Estimates") +
+  theme_classic()
+
+```
+
+### d. The Poindexters are hoping that Lee is that rare blernsball player that averages a rate of one grand slam blerns per game or more. Give the posterior probability that this is the case (i.e., $\lambda \ge 1$).
+
+```{r, echo = TRUE}
+
+### Extract all lambda estimates
+lambdas = extract(model2)$lambda
+
+### Probability that lambda is > 1 is 
+### the count of lambda estimates > 1 divided by the number of estimates
+sum(lambdas > 1) / length(lambdas) 
+
+```
+
+The probability that $\lambda$ is greater than or equal to 1 is .01.
